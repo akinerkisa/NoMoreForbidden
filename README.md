@@ -30,6 +30,6 @@ Flag | Description | Example | Default |
 ## How to work False-Positive Detection
 <code>https://google.com/test/../ etc.</code> payloads or <code>X-Original-URL etc.</code> headers such as has a high false-positive rate. NoMoreForbidden is compares main page response length and bypass result response length. If them is equal, at high rate this result is false-positive. However, this system cannot always be trusted. On some websites (eg google.com) page lengths vary and this prevents the program from detecting false-positive.
 
-## How to work Cloudflare - Cloudfront Detection
-IP address-based bypass only works with the origin IP. If the target uses services like Cloudflare or CloudFront, we cannot access the original IP. While testing IP address bypass, NMF checks the server, and if the website uses Cloudflare or CloudFront, NMF notifies the user of this.
+## How to work CDN/WAF && Cloudflare - Cloudfront Detection
+IP address-based bypass only works with the origin IP. If the target uses services like Cloudflare or CloudFront, we cannot access the original IP. While testing IP address bypass, NMF checks the server, and if the website uses Cloudflare or CloudFront, NMF notifies the user of this. Additionally, SSL Handshake failed error may also indicate a cdn/waf. This is also notified to the user.
 
