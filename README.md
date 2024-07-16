@@ -3,16 +3,16 @@
 NoMoreForbidden is a tool that tries various techniques to bypass forbidden(403) pages on websites and presents their results to the user.
 
 ## Installation
-<code>git clone https://github.com/0akiner/NoMoreForbidden</code>
+<code>git clone https://github.com/akinerk/NoMoreForbidden</code>
 <p><code>cd NoMoreForbidden</code></p>
 <p><code>pip install -r requirements.txt</code></p>
   
 ## Usage
-<code>python3 nmf.py -u https://www.google.com/test </code>
+<code>python3 nmf.py -u https://www.example.com/test </code>
 
 Flag | Description | Example | Default |
 --- | --- | --- | --- |
--u | Specify URL | python3 nmf.py -u https://www.google.com/test | N/A |
+-u | Specify URL | python3 nmf.py -u https://www.example.com/test | N/A |
 -ip | Specify ip adress for ip-based headers | python3 nmf.py -ip 1.1.1.1 | 127.0.0.1 |
 -v | Toggles showing all Valid/Invalid results | python3 nmf.py -v on/off | off |
 
@@ -24,7 +24,13 @@ Flag | Description | Example | Default |
 <li> Protocol change based bypass (http to https - https to http)
 <li> Wayback Machine history check
 <li> False-Positive result detection</li>
+<li> Ip Adress based bypass/li> -new v0.2 
+<li> HTTP Protocol version based bypass</li> -new v0.2
+
 
 ## How to work False-Positive Detection
 <code>https://google.com/test/../ etc.</code> payloads or <code>X-Original-URL etc.</code> headers such as has a high false-positive rate. NoMoreForbidden is compares main page response length and bypass result response length. If them is equal, at high rate this result is false-positive. However, this system cannot always be trusted. On some websites (eg google.com) page lengths vary and this prevents the program from detecting false-positive.
+
+## How to work Cloudflare - Clooudfront Detection
+IP address-based bypass only works with the origin IP. If the target uses services like Cloudflare or CloudFront, we cannot access the original IP. While testing IP address bypass, NMF checks the server, and if the website uses Cloudflare or CloudFront, NMF notifies the user of this.
 
