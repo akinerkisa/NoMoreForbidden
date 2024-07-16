@@ -156,40 +156,44 @@ def httpv(url):
 
 
 def get_ip(url):
-    domain = urlparse(url).netloc
-    try:
-        ip_address = socket.gethostbyname(domain)
-        if verbose == "on":
-            print(f"Original Domain: {domain}")
-            print(f"IP Address: {ip_address}")
-        
-        ip_url = f"{urlparse(url).scheme}://{ip_address}{urlparse(url).path}"
-        try:
-            response = requests.get(ip_url, headers={'Host': domain}, verify=False, timeout=5)
-            
-            if 'Server' in response.headers:
-                server = response.headers['Server']
-                if 'cloudflare' in server.lower():
-                    print("Cloudflare detected - Not Origin IP")
-                elif 'cloudfront' in server.lower():
-                    print("CloudFront detected - Not Origin IP")
-                else:
-                    if response.status_code in [200, 302]:
-                        print(f"IP-based request successful: {ip_url} [{response.status_code}]")
-                    elif verbose == "on":
-                        print(f"IP-based request: {ip_url} [{response.status_code}]")
-            
-        except SSLError as e:
-            if verbose == "on":
-                print(f"SSL Error making request to IP-based URL: {str(e)}")
-        except RequestException as e:
-            if verbose == "on":
-                print(f"Error making request to IP-based URL: {str(e)}")
-    
-    except socket.gaierror:
-        if verbose == "on":
-            print(f"Could not resolve IP for domain: {domain}")
+  domain = urlparse(url).netloc
+  try:
+      ip_address = socket.gethostbyname(domain)
+      if verbose == "on":
+          print(f"Original Domain: {domain}")
+          print(f"IP Address: {ip_address}")
+      
+      ip_url = f"{urlparse(url).scheme}://{ip_address}{urlparse(url).path}"
+      
+      try:
+          response = requests.get(ip_url, headers={'Host': domain}, verify=False, timeout=5)
+          
+          if 'Server' in response.headers:
+              server = response.headers['Server'].lower()
+              if 'cloudflare' in server or 'cloudfront' in server:
+                  print(f"CDN detected ({server}) - Not Origin IP")
+              else:
+                  print_response(ip_url, response.status_code)
+          else:
+              print_response(ip_url, response.status_code)
+      
+      except SSLError:
+          print("CDN/WAF detected - SSL handshake failed")
+      except RequestException as e:
+          if 'SSLError' in str(e):
+              print("CDN/WAF detected - SSL handshake failed")
+          elif verbose == "on":
+              print(f"Request Error: {str(e)}")
+  
+  except socket.gaierror:
+      if verbose == "on":
+          print(f"Could not resolve IP for domain: {domain}")
 
+def print_response(url, status_code):
+  if status_code in [200, 302]:
+      print(f"IP-based request successful: {url} [{status_code}]")
+  elif verbose == "on":
+      print(f"IP-based request: {url} [{status_code}]")
 
 banner = """
 .__   __. .___  ___.  _______ 
