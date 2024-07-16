@@ -5,8 +5,10 @@ import requests
 import json
 import urllib3
 import argparse
+import socket
 from urllib.parse import urlparse
 from random import choice
+from requests.exceptions import RequestException, SSLError
 
 urllib3.disable_warnings()
 
@@ -125,13 +127,77 @@ def ssl(url):
         if response.status_code == 200 or response.status_code == 302:
             print(f'Protocol Change Result [{response.status_code}] Changed Protocol [{urlparse(url).scheme.upper()}]')
 
+def httpv(url):
+    original_version = None
+    try:
+        response = requests.get(url, verify=False)
+        original_version = response.raw.version
+    except:
+        pass
+
+    if verbose == "on":
+        print(f"Original HTTP version: {original_version}")
+
+    versions_to_test = [10, 11, 20]  # HTTP/1.0, HTTP/1.1, HTTP/2
+    for version in versions_to_test:
+        if version != original_version:
+            try:
+                response = requests.get(url, verify=False, allow_redirects=False, 
+                                        headers={'Connection': 'close'})
+                response.raw.version = version
+                
+                if response.status_code in [200, 302]:
+                    print(f"HTTP/{version/10} request successful [{response.status_code}]")
+                elif verbose == "on":
+                    print(f"HTTP/{version/10} request: [{response.status_code}]")
+            except:
+                if verbose == "on":
+                    print(f"Failed to test HTTP/{version/10}")
+
+
+def get_ip(url):
+    domain = urlparse(url).netloc
+    try:
+        ip_address = socket.gethostbyname(domain)
+        if verbose == "on":
+            print(f"Original Domain: {domain}")
+            print(f"IP Address: {ip_address}")
+        
+        ip_url = f"{urlparse(url).scheme}://{ip_address}{urlparse(url).path}"
+        try:
+            response = requests.get(ip_url, headers={'Host': domain}, verify=False, timeout=5)
+            
+            if 'Server' in response.headers:
+                server = response.headers['Server']
+                if 'cloudflare' in server.lower():
+                    print("Cloudflare detected - Not Origin IP")
+                elif 'cloudfront' in server.lower():
+                    print("CloudFront detected - Not Origin IP")
+                else:
+                    if response.status_code in [200, 302]:
+                        print(f"IP-based request successful: {ip_url} [{response.status_code}]")
+                    elif verbose == "on":
+                        print(f"IP-based request: {ip_url} [{response.status_code}]")
+            
+        except SSLError as e:
+            if verbose == "on":
+                print(f"SSL Error making request to IP-based URL: {str(e)}")
+        except RequestException as e:
+            if verbose == "on":
+                print(f"Error making request to IP-based URL: {str(e)}")
+    
+    except socket.gaierror:
+        if verbose == "on":
+            print(f"Could not resolve IP for domain: {domain}")
+
+
 banner = """
 .__   __. .___  ___.  _______ 
-|  \ |  | |   \/   | |   ____|
-|   \|  | |  \  /  | |  |__   
-|  . `  | |  |\/|  | |   __|  
-|  |\   | |  |  |  | |  |     
-|__| \__| |__|  |__| |__|     v0.1 github.com/0akiner/nomoreforbidden
+|  \\ |  | |   \\/   | |   ____|
+|   \\|  | |  \\  /  | |  |__   
+|  . `  | |  |\\/|  | |   __|  
+|  |\\   | |  |  |  | |  |     
+|__| \\__| |__|  |__| |__|     v0.2 github.com/akinerk/nomoreforbidden
 """
 
 if __name__ == "__main__":
@@ -139,3 +205,5 @@ if __name__ == "__main__":
     nmf(url)
     ssl(url)
     wayback(url)
+    httpv(url)
+    get_ip(url)
