@@ -24,9 +24,8 @@ Flag | Description | Example | Default |
 <li> Protocol change based bypass (http to https - https to http)
 <li> Wayback Machine history check
 <li> False-Positive result detection</li>
-<li> Ip Adress based bypass/li> -new v0.2 
-<li> HTTP Protocol version based bypass</li> -new v0.2
-
+<li> Ip Adress based bypass  -new v0.2 </li>
+<li> HTTP Protocol version based bypass  -new v0.2 </li>
 
 ## How to work False-Positive Detection
 <code>https://google.com/test/../ etc.</code> payloads or <code>X-Original-URL etc.</code> headers such as has a high false-positive rate. NoMoreForbidden is compares main page response length and bypass result response length. If them is equal, at high rate this result is false-positive. However, this system cannot always be trusted. On some websites (eg google.com) page lengths vary and this prevents the program from detecting false-positive.
