@@ -33,3 +33,5 @@ Flag | Description | Example | Default |
 ## How to work CDN/WAF && Cloudflare - Cloudfront Detection
 IP address-based bypass only works with the origin IP. If the target uses services like Cloudflare or CloudFront, we cannot access the original IP. While testing IP address bypass, NMF checks the server, and if the website uses Cloudflare or CloudFront, NMF notifies the user of this. Additionally, SSL Handshake failed error may also indicate a cdn/waf. This is also notified to the user.
 
+## References
+https://book.hacktricks.xyz/network-services-pentesting/pentesting-web/403-and-401-bypasses
