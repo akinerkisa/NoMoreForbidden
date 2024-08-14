@@ -229,8 +229,6 @@ banner = """
 |__| \\__| |__|  |__| |__|     v0.2 github.com/akinerk/nomoreforbidden
 """
 
-if __name__ == "__main__":
-    print(banner)
 
 if __name__ == '__main__':
     print(banner)
