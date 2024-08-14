@@ -219,8 +219,21 @@ def print_response(url, status_code):
     else:
         if status_code == 200 or status_code == 302:
             print(f"IP URL: {url} [{status_code}]")
+            
+banner = """
+.__   __. .___  ___.  _______ 
+|  \\ |  | |   \\/   | |   ____|
+|   \\|  | |  \\  /  | |  |__   
+|  . `  | |  |\\/|  | |   __|  
+|  |\\   | |  |  |  | |  |     
+|__| \\__| |__|  |__| |__|     v0.2 github.com/akinerk/nomoreforbidden
+"""
+
+if __name__ == "__main__":
+    print(banner)
 
 if __name__ == '__main__':
+    print(banner)
     nmf(url)
     wayback(url)
     ssl(url)
