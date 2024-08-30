@@ -226,7 +226,7 @@ banner = """
 |   \\|  | |  \\  /  | |  |__   
 |  . `  | |  |\\/|  | |   __|  
 |  |\\   | |  |  |  | |  |     
-|__| \\__| |__|  |__| |__|     v0.2 github.com/akinerk/nomoreforbidden
+|__| \\__| |__|  |__| |__|     v0.2 github.com/akinerkisa/nomoreforbidden
 """
 
 
