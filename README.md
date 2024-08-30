@@ -3,7 +3,7 @@
 NoMoreForbidden is a tool that tries various techniques to bypass forbidden(403) pages on websites and presents their results to the user.
 
 ## Installation
-<code>git clone https://github.com/akinerk/NoMoreForbidden</code>
+<code>git clone https://github.com/akinerkisa/NoMoreForbidden</code>
 <p><code>cd NoMoreForbidden</code></p>
 <p><code>pip install -r requirements.txt</code></p>
   
