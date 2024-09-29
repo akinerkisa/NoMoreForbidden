@@ -2,6 +2,12 @@
 
 NoMoreForbidden is a tool that tries various techniques to bypass forbidden(403) pages on websites and presents their results to the user.
 
+> [!NOTE]
+> NoMoreForbidden now has golang version. Check in https://github.com/akinerkisa/GoNMF
+
+> [!NOTE]
+> You can try this tool with https://github.com/akinerkisa/renikApp 403 vulnerable page section.
+
 ## Installation
 <code>git clone https://github.com/akinerkisa/NoMoreForbidden</code>
 <p><code>cd NoMoreForbidden</code></p>
