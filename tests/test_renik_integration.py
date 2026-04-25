@@ -39,18 +39,17 @@ def renik_server() -> None:
         [sys.executable, str(renik_dir / "run_dev.py")],
         cwd=str(renik_dir),
         stdout=subprocess.DEVNULL,
-        stderr=subprocess.PIPE,
+        # Flask access logları entegrasyon sırasında çok büyüyebilir; PIPE dolarsa
+        # çocuk süreç bloklanır ve testler timeout'a düşer.
+        stderr=subprocess.DEVNULL,
     )
     for _ in range(30):
         if _renik_reachable():
             break
         time.sleep(0.2)
     else:
-        err = b""
-        if proc.stderr:
-            err = proc.stderr.read(4000)
         proc.terminate()
-        pytest.skip(f"renikApp başlatılamadı: {err.decode(errors='replace')!r}")
+        pytest.skip("renikApp başlatılamadı")
     yield
     proc.terminate()
     try:
