@@ -1,4 +1,3 @@
-"""Allowlist ve tahmini istek sayımı."""
 
 import subprocess
 import sys
@@ -65,7 +64,7 @@ def test_validate_scope_host_mismatch():
         "https://evil.com/", ["example.com"], [], allow_private=True
     )
     assert err is not None
-    assert "evil.com" in err or "izin" in err.lower()
+    assert "evil.com" in err or "allow" in err.lower()
 
 
 def test_validate_scope_prefix_mismatch():
@@ -160,4 +159,4 @@ def test_cli_max_requests_aborts_before_http():
     )
     assert proc.returncode == 2
     combined = (proc.stderr + proc.stdout).lower()
-    assert "50" in combined or "iptal" in combined
+    assert "50" in combined or "abort" in combined

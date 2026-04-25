@@ -1,4 +1,3 @@
-"""CLI parser tests."""
 
 import pytest
 

@@ -1,4 +1,3 @@
-"""Hedef URL için isteğe bağlı host / URL öneki allowlist (yanlışlıkla geniş taramayı azaltır)."""
 
 from __future__ import annotations
 
@@ -24,22 +23,19 @@ def validate_target_scope(
     require_scope: bool = False,
     allow_private: bool = False,
 ) -> str | None:
-    """Uygunsa None; değilse Türkçe hata mesajı."""
     parsed = urlparse(url)
     if parsed.scheme not in ("http", "https"):
-        return "Yalnızca http veya https URL'leri desteklenir."
+        return "Only http and https URLs are supported."
 
     host = normalize_host(parsed.hostname)
     if not host:
-        return "URL'de hostname yok; geçerli bir hedef verin."
+        return "URL has no hostname; provide a valid target."
 
     if not allow_private and is_private_or_local_host(host):
-        return (
-            "Hedef private/local gorunuyor. Bilincli calismak icin --allow-private kullanin."
-        )
+        return "Target appears private/local. Use --allow-private to run intentionally."
 
     if require_scope and not allowed_hosts and not allowed_url_prefixes:
-        return "--require-scope etkinken --allow-host veya --allow-url-prefix zorunludur."
+        return "--require-scope requires --allow-host or --allow-url-prefix."
 
     if not allowed_hosts and not allowed_url_prefixes:
         return None
@@ -48,7 +44,7 @@ def validate_target_scope(
         ok = any(url.startswith(p) for p in allowed_url_prefixes)
         if not ok:
             return (
-                "Hedef URL, --allow-url-prefix ile verilen öneklerden biriyle başlamıyor: "
+                "Target URL does not start with any allowed --allow-url-prefix: "
                 + ", ".join(repr(p) for p in allowed_url_prefixes)
             )
 
@@ -57,8 +53,8 @@ def validate_target_scope(
         allowed_norm.discard(None)
         if host not in allowed_norm:
             return (
-                f"Hostname izin listesinde değil: {host!r} "
-                f"(izin verilenler: {sorted(allowed_norm)})"
+                f"Hostname is not in allowlist: {host!r} "
+                f"(allowed: {sorted(allowed_norm)})"
             )
 
     return None

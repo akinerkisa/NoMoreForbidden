@@ -1,8 +1,3 @@
-"""renikApp (yerel) ile uçtan uca smoke test.
-
-Önce 127.0.0.1:5000 yanıt veriyorsa mevcut sunucu kullanılır; aksi halde
-``renikApp/run_dev.py`` ile geçici süreç başlatılır (Flask kurulu olmalı).
-"""
 
 from __future__ import annotations
 
@@ -36,7 +31,7 @@ def renik_server() -> None:
         return
     renik_dir = ROOT / "renikApp"
     if not renik_dir.exists():
-        pytest.skip("renikApp klasoru repo kapsaminda degil")
+        pytest.skip("renikApp directory is not included in this repository")
     proc = subprocess.Popen(
         [sys.executable, str(renik_dir / "run_dev.py")],
         cwd=str(renik_dir),
@@ -49,7 +44,7 @@ def renik_server() -> None:
         time.sleep(0.2)
     else:
         proc.terminate()
-        pytest.skip("renikApp başlatılamadı")
+        pytest.skip("renikApp could not be started")
     yield
     proc.terminate()
     try:

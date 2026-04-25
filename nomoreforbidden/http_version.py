@@ -1,9 +1,3 @@
-"""HTTP/1.0 and HTTP/1.1 probes via http.client.
-
-Assigning response.raw.version in requests does not change the wire protocol; this
-module uses low-level connections. Optional HTTP/2 probing uses httpx when enabled.
-Proxies apply only to requests.Session traffic; HTTP/1.x probes bypass the session.
-"""
 
 from __future__ import annotations
 
@@ -22,7 +16,6 @@ except ImportError:  # pragma: no cover - exercised via helper
 def probe_http_version(
     url: str, version: int, timeout: float = 5.0
 ) -> tuple[int | None, str | None]:
-    """Issue GET; returns (status_code, error_message). status_code None on failure."""
     parsed = urlparse(url)
     host = parsed.hostname
     if not host:
@@ -60,7 +53,6 @@ def probe_http_version(
 
 
 def probe_http2(url: str, timeout: float = 5.0) -> tuple[int | None, str | None]:
-    """Try HTTP/2 with httpx. Returns (status_code, error_message)."""
     if httpx is None:
         return None, "httpx is not installed"
 
@@ -77,7 +69,6 @@ def probe_http2(url: str, timeout: float = 5.0) -> tuple[int | None, str | None]
 
 
 def run_http_version_checks(url: str, verbose: bool, ctx: RunContext | None = None) -> None:
-    """Try HTTP/1.0 and HTTP/1.1 in separate connections; print or structured record."""
     labels = {10: "HTTP/1.0", 11: "HTTP/1.1"}
     structured = ctx is not None and ctx.structured
 

@@ -1,4 +1,3 @@
-"""Main bypass probes split out from core orchestrator."""
 
 from __future__ import annotations
 

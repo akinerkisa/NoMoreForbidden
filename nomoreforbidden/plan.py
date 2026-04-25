@@ -1,4 +1,3 @@
-"""Tahmini HTTP istek sayıları (probes ile aynı boyutlar; üst sınır)."""
 
 from __future__ import annotations
 
@@ -24,7 +23,6 @@ def fp_baseline_upper_bound(fp_baseline: str) -> int:
 
 
 def estimate_nmf_main_http_requests(url: str, ctx: RunContext) -> int:
-    """nmf() içindeki session tabanlı GET/POST vb. (fp baseline hariç)."""
     parsed = urlparse(url)
     path = parsed.path
     base = f"{parsed.scheme}://{parsed.netloc}"
@@ -54,7 +52,6 @@ def estimate_nmf_main_http_requests(url: str, ctx: RunContext) -> int:
 
 
 def estimate_probe_http_upper_bound(url: str, ctx: RunContext, enabled: set[str]) -> dict:
-    """Uçtan uca tahmini HTTP istek üst sınırı (Wayback dâhil dış origin)."""
     parts: dict[str, int | dict[str, int]] = {}
     total = 0
 

@@ -1,4 +1,3 @@
-"""CLI parsing and execution."""
 
 from __future__ import annotations
 
@@ -158,23 +157,23 @@ def resolve_enabled_probes(
 
 def validate_runtime_args(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
     if args.delay < 0:
-        parser.error("--delay 0 veya daha buyuk olmali.")
+        parser.error("--delay must be 0 or greater.")
     if args.fp_bytes < 1:
-        parser.error("--fp-bytes en az 1 olmali.")
+        parser.error("--fp-bytes must be at least 1.")
     if args.fp_threshold < 0:
-        parser.error("--fp-threshold negatif olamaz.")
+        parser.error("--fp-threshold cannot be negative.")
     if args.concurrency < 1:
-        parser.error("--concurrency en az 1 olmali.")
+        parser.error("--concurrency must be at least 1.")
     if args.rate_limit < 0:
-        parser.error("--rate-limit negatif olamaz.")
+        parser.error("--rate-limit cannot be negative.")
     if args.timeout <= 0:
-        parser.error("--timeout 0'dan buyuk olmali.")
+        parser.error("--timeout must be greater than 0.")
     if args.retries < 0:
-        parser.error("--retries negatif olamaz.")
+        parser.error("--retries cannot be negative.")
     if args.max_requests < 0:
-        parser.error("--max-requests negatif olamaz.")
+        parser.error("--max-requests cannot be negative.")
     if args.deadline < 0:
-        parser.error("--deadline negatif olamaz.")
+        parser.error("--deadline cannot be negative.")
 
 
 def apply_safe_mode(args: argparse.Namespace) -> None:
@@ -350,64 +349,64 @@ def build_parser() -> argparse.ArgumentParser:
         action="append",
         default=[],
         metavar="HOST",
-        help="İzin verilen hostname (tekrarlanabilir, küçük/büyük duyarsız). Boşsa kısıt yok.",
+        help="Allowed hostname (repeatable, case-insensitive). No restriction when empty.",
     )
     p.add_argument(
         "--allow-url-prefix",
         action="append",
         default=[],
         metavar="URL",
-        help="İzin verilen tam URL öneki; hedef bu öneklerden biriyle başlamalı (tekrarlanabilir).",
+        help="Allowed full URL prefix; target must start with one of these values.",
     )
     p.add_argument(
         "--dry-run",
         action="store_true",
-        help="HTTP isteği göndermeden tahmini istek sayısını yazdır ve çık (çıkış kodu 0).",
+        help="Print estimated request count without sending HTTP requests and exit 0.",
     )
     p.add_argument(
         "--max-requests",
         type=int,
         default=0,
         metavar="N",
-        help="Tahmini toplam HTTP üst sınırı N'den büyükse taramayı başlatma ve çık (2). 0=kapalı.",
+        help="Abort scan and exit 2 when estimated HTTP upper bound exceeds N (0=off).",
     )
     p.add_argument(
         "--safe-mode",
         action="store_true",
-        help="Daha guvenli varsayilanlar uygular; force-run verilmezse dry-run moduna gecer.",
+        help="Apply safer defaults; switches to dry-run unless --force-run is set.",
     )
     p.add_argument(
         "--force-run",
         action="store_true",
-        help="safe-mode ile birlikte gercek HTTP taramasina izin verir.",
+        help="Allow live HTTP scan while --safe-mode is enabled.",
     )
     p.add_argument(
         "--require-scope",
         action="store_true",
-        help="Calisma oncesi --allow-host veya --allow-url-prefix zorunlu olsun.",
+        help="Require --allow-host or --allow-url-prefix before execution.",
     )
     p.add_argument(
         "--allow-private",
         action="store_true",
-        help="Private/loopback/local hedefleri bilerek taramaya izin ver.",
+        help="Allow intentional scans against private/loopback/local targets.",
     )
     p.add_argument(
         "--deadline",
         type=float,
         default=0.0,
         metavar="SEC",
-        help="Toplam tarama suresi ust siniri (0=kapali). Asilirsa surec durur.",
+        help="Global scan runtime cap in seconds (0=off). Stops when exceeded.",
     )
     p.add_argument(
         "--output-file",
         metavar="PATH",
         default=None,
-        help="Ciktilari stdout'a ek olarak dosyaya da yaz.",
+        help="Write output to file in addition to stdout.",
     )
     p.add_argument(
         "--redact",
         action="store_true",
-        help="Structured ciktilarda hassas alanlari maskele.",
+        help="Mask sensitive values in structured output.",
     )
     return p
 
@@ -461,7 +460,6 @@ def render_text_summary(summary: dict[str, object]) -> str:
 
 
 def run_cli() -> None:
-    """setuptools `project.scripts` girişi: çıkış kodunu işletim sistemine iletir."""
     raise SystemExit(main())
 
 
@@ -540,25 +538,28 @@ def main() -> int:
             payload: Any = _redact_payload(out) if args.redact else out
             _emit_output(f"{json.dumps(payload, indent=2)}\n", args.output_file)
         else:
-            lines = ["NoMoreForbidden - dry-run (HTTP gonderilmedi)", f"Hedef: {args.url}"]
+            lines = ["NoMoreForbidden - dry-run (no HTTP sent)", f"Target: {args.url}"]
             if args.allow_host:
-                lines.append(f"Izin verilen host: {', '.join(args.allow_host)}")
+                lines.append(f"Allowed host: {', '.join(args.allow_host)}")
             if args.allow_url_prefix:
-                lines.append(f"Izin verilen onek: {', '.join(args.allow_url_prefix)}")
-            lines.append("Tahmini HTTP istek ust siniri (session + dusuk seviye http_version):")
+                lines.append(f"Allowed prefix: {', '.join(args.allow_url_prefix)}")
+            lines.append("Estimated HTTP upper bound (session + low-level http_version):")
             for k, v in est.items():
                 if k == "total_upper_bound":
                     continue
                 lines.append(f"  {k}: {v}")
-            lines.append(f"  TOPLAM (ust sinir): {total_est}")
+            lines.append(f"  TOTAL (upper bound): {total_est}")
             _emit_output("\n".join(lines) + "\n", args.output_file)
         return 0
 
     max_req = max(0, int(args.max_requests))
     if max_req > 0 and total_est > max_req:
+        msg = (
+            f"Estimated HTTP upper bound ({total_est}) "
+            f"exceeds --max-requests ({max_req}); aborting."
+        )
         print(
-            f"Tahmini HTTP istek üst sınırı ({total_est}) --max-requests ({max_req}) "
-            "değerini aşıyor; iptal.",
+            msg,
             file=sys.stderr,
         )
         return 2
@@ -581,7 +582,7 @@ def main() -> int:
         if ctx.structured:
             ctx.record(category="error", phase="runtime", error=str(exc))
         else:
-            _emit_output(f"Zaman siniri asildi: {exc}\n", args.output_file)
+            _emit_output(f"Deadline exceeded: {exc}\n", args.output_file)
         return 2
     summary = build_summary(ctx.findings, ctx.has_hit)
 

@@ -1,4 +1,3 @@
-"""Oturum, çıktı biçimi ve bulgu toplama."""
 
 from __future__ import annotations
 
@@ -15,8 +14,6 @@ FpBaselineMode = Literal["auto", "target", "root"]
 
 @dataclass
 class RunContext:
-    """requests.Session + isteğe bağlı yapılandırılmış çıktı (json/csv)."""
-
     session: requests.Session
     verbose: bool
     output_format: OutputFormat
@@ -46,7 +43,6 @@ class RunContext:
 
     @property
     def structured(self) -> bool:
-        """json veya csv: insan çıktısı yok, bulgular toplanır."""
         return self.output_format in ("json", "csv")
 
     def record(self, **row: Any) -> None:
@@ -55,7 +51,6 @@ class RunContext:
                 self.findings.append(dict(row))
 
     def register_hit(self) -> None:
-        """Çıkış kodu 0 için anlamlı sinyal (bypass / erişim ipucu)."""
         with self._lock:
             self.has_hit = True
 

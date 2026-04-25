@@ -1,4 +1,3 @@
-"""Backward-compatible entry: run as ``python nmf.py``."""
 
 import sys
 

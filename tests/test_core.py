@@ -1,4 +1,3 @@
-"""Core module unit tests."""
 
 from types import SimpleNamespace
 

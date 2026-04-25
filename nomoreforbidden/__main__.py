@@ -1,4 +1,3 @@
-"""Entry point for python -m nomoreforbidden."""
 
 import sys
 

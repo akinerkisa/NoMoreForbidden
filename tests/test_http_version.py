@@ -1,4 +1,3 @@
-"""HTTP version probe tests."""
 
 import nomoreforbidden.http_version as hv
 from nomoreforbidden.context import RunContext, build_session

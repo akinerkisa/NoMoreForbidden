@@ -1,4 +1,3 @@
-"""Compatibility layer exporting core probes and helpers."""
 
 import urllib3
 

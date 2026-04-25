@@ -35,7 +35,7 @@ version = {attr = "nomoreforbidden._version.VERSION"}
 pythonpath = ["."]
 testpaths = ["tests"]
 markers = [
-  "integration: renikApp ile yerel HTTP entegrasyonu (Flask gerekir)",
+  "integration: local HTTP integration with renikApp (requires Flask)",
 ]
 
 [tool.ruff]

@@ -1,4 +1,3 @@
-"""Shared request and false-positive helpers."""
 
 from __future__ import annotations
 
@@ -27,7 +26,6 @@ BODY_PREVIEW_LIMIT = 160
 
 
 def req_kwargs(ctx: RunContext, extra: dict | None = None) -> dict:
-    """Default request kwargs for target: verify=False, fixed timeout."""
     timeout = ctx.timeout_sec or DEFAULT_TIMEOUT
     left = ctx.seconds_left()
     if left is not None:
