@@ -164,3 +164,4 @@
 - **Repo hijyen:** `.gitignore` eklendi; `__pycache__/`, `*.py[cod]`, `*.egg-info/`, `.pytest_cache/`, `.ruff_cache/` artık izlenmiyor.
 - **Commit planı:** Değişiklikler `kod/paketleme+test+ci` ve `dokümantasyon/devlog` olarak iki ayrı yerel commit'e bölündü.
 - **Test düzeltmesi:** `tests/test_renik_integration.py` içinde `renikApp` subprocess artık `stderr=DEVNULL`; Flask request loglarının pipe'ı doldurup entegrasyon testlerini timeout'a düşürmesi engellendi.
+- **Repo kapsamı:** `renikApp/` klasörü ana depoda takip dışı bırakıldı (`.gitignore`), nested-repo/submodule karmaşasını önlemek için varsayılan olarak dışarıda tutuluyor.
