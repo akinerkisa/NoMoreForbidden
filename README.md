@@ -161,7 +161,7 @@ IP address-based bypass only works with the origin IP. If the target uses servic
 
 ## Development tests
 
-<code>pip install -r requirements.txt -r requirements-dev.txt</code>
+<code>pip install -e ".[dev]"</code>
 
 <code>pytest</code>
 

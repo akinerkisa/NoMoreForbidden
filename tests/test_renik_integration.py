@@ -35,6 +35,8 @@ def renik_server() -> None:
         yield
         return
     renik_dir = ROOT / "renikApp"
+    if not renik_dir.exists():
+        pytest.skip("renikApp klasoru repo kapsaminda degil")
     proc = subprocess.Popen(
         [sys.executable, str(renik_dir / "run_dev.py")],
         cwd=str(renik_dir),
