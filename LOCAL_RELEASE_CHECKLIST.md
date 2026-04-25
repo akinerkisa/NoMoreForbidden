@@ -1,0 +1,23 @@
+# Local Release Checklist
+
+- Confirm clean environment: `python -m pip install -e ".[dev]"`.
+- Run lint: `ruff check .`.
+- Run tests: `pytest -q`.
+- Run smoke commands:
+  - `nmf --version`
+  - `python -m nomoreforbidden --version`
+  - `python nmf.py --version`
+  - `python nmf.py -u https://example.com/x --only nmf --dry-run --output-format json`
+- Validate safe controls:
+  - `--safe-mode` defaults to dry-run behavior.
+  - `--require-scope` blocks scans without allowlist.
+  - private/local targets require `--allow-private`.
+- Validate reliability controls:
+  - `--deadline` aborts long-running scans with exit code `2`.
+  - retry/backoff behavior works with transient errors.
+- Validate output contracts:
+  - JSON includes `schema_version`.
+  - `--output-file` mirrors stdout payloads.
+  - `--redact` masks sensitive fields in structured output.
+- Verify packaging metadata in `pyproject.toml` (`name`, `dynamic version`, scripts).
+- Only then create a local release tag/commit as needed.

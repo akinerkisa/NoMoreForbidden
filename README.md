@@ -66,6 +66,13 @@ You can also run the package as a module:
 | `--allow-url-prefix` | Allowed URL prefix (repeatable); target must start with one prefix | `python3 nmf.py -u … --allow-url-prefix https://example.com/` | none |
 | `--dry-run` | No HTTP; print estimated request upper bound and exit `0` | `python3 nmf.py -u … --dry-run` | off |
 | `--max-requests` | Abort before scanning if estimated HTTP total exceeds N (exit `2`); `0` = off | `python3 nmf.py -u … --max-requests 500` | `0` |
+| `--safe-mode` | Applies guarded defaults (`require-scope`, lower concurrency/rate); runs dry-run unless `--force-run` | `python3 nmf.py -u … --safe-mode` | off |
+| `--force-run` | Allows real scan while `--safe-mode` is active | `python3 nmf.py -u … --safe-mode --force-run` | off |
+| `--require-scope` | Requires at least one of `--allow-host` / `--allow-url-prefix` | `python3 nmf.py -u … --require-scope --allow-host example.com` | off |
+| `--allow-private` | Allows localhost/private targets (blocked by default) | `python3 nmf.py -u http://127.0.0.1:5000/x --allow-private` | off |
+| `--deadline` | Global runtime cap in seconds; stops scan when exceeded | `python3 nmf.py -u … --deadline 30` | `0` (disabled) |
+| `--output-file` | Writes the same output to a file as well as stdout | `python3 nmf.py -u … --json --output-file out.json` | none |
+| `--redact` | Masks sensitive fields in structured outputs (`json`/`csv`) | `python3 nmf.py -u … --json --redact` | off |
 | `--version` | Print version and exit | `python3 nmf.py --version` | — |
 
 Legacy note: older docs used `-v on/off`. The current CLI uses a boolean flag: pass `-v` or `--verbose` to enable verbose output.
