@@ -10,7 +10,11 @@ from nomoreforbidden.plan import (
     estimate_probe_http_upper_bound,
     fp_baseline_upper_bound,
 )
-from nomoreforbidden.scope import normalize_host, validate_target_scope
+from nomoreforbidden.scope import (
+    is_private_or_local_host,
+    normalize_host,
+    validate_target_scope,
+)
 
 
 def _default_ctx(**kwargs: object) -> RunContext:
@@ -36,26 +40,73 @@ def test_normalize_host_ipv6_bracket():
 
 
 def test_validate_scope_ok():
-    assert validate_target_scope("https://a.example.com/x", ["a.example.com"], []) is None
+    assert (
+        validate_target_scope(
+            "https://a.example.com/x",
+            ["a.example.com"],
+            [],
+            allow_private=True,
+        )
+        is None
+    )
     assert (
         validate_target_scope(
             "https://a.example.com/x",
             [],
             ["https://a.example.com/"],
+            allow_private=True,
         )
         is None
     )
 
 
 def test_validate_scope_host_mismatch():
-    err = validate_target_scope("https://evil.com/", ["example.com"], [])
+    err = validate_target_scope(
+        "https://evil.com/", ["example.com"], [], allow_private=True
+    )
     assert err is not None
     assert "evil.com" in err or "izin" in err.lower()
 
 
 def test_validate_scope_prefix_mismatch():
-    err = validate_target_scope("https://evil.com/", [], ["https://good.com/"])
+    err = validate_target_scope(
+        "https://evil.com/",
+        [],
+        ["https://good.com/"],
+        allow_private=True,
+    )
     assert err is not None
+
+
+def test_validate_scope_private_rejected_without_flag():
+    err = validate_target_scope("http://127.0.0.1:8000/x", [], [])
+    assert err is not None
+    assert "allow-private" in err
+
+
+def test_validate_scope_private_allowed_with_flag():
+    err = validate_target_scope("http://127.0.0.1:8000/x", [], [], allow_private=True)
+    assert err is None
+
+
+def test_validate_scope_require_scope_flag():
+    err = validate_target_scope(
+        "https://example.com/a",
+        [],
+        [],
+        require_scope=True,
+        allow_private=True,
+    )
+    assert err is not None
+    assert "allow-host" in err
+
+
+def test_is_private_or_local_host():
+    assert is_private_or_local_host("localhost") is True
+    assert is_private_or_local_host("127.0.0.1") is True
+    assert is_private_or_local_host("10.1.1.1") is True
+    assert is_private_or_local_host("app.local") is True
+    assert is_private_or_local_host("example.com") is False
 
 
 def test_fp_baseline_upper_bound():

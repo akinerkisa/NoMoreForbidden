@@ -41,8 +41,6 @@ def renik_server() -> None:
         [sys.executable, str(renik_dir / "run_dev.py")],
         cwd=str(renik_dir),
         stdout=subprocess.DEVNULL,
-        # Flask access logları entegrasyon sırasında çok büyüyebilir; PIPE dolarsa
-        # çocuk süreç bloklanır ve testler timeout'a düşer.
         stderr=subprocess.DEVNULL,
     )
     for _ in range(30):
@@ -87,6 +85,7 @@ def test_renik_403_real_bypass_paths(path: str) -> None:
             "8",
             "-ip",
             "127.0.0.1",
+            "--allow-private",
         ],
         cwd=str(ROOT),
         capture_output=True,
@@ -111,6 +110,7 @@ def test_renik_fake_200_flags_possible_fp() -> None:
             "--json",
             "--timeout",
             "8",
+            "--allow-private",
         ],
         cwd=str(ROOT),
         capture_output=True,

@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import time
 from urllib.parse import urlparse
 
 from requests import Response
@@ -27,7 +28,11 @@ BODY_PREVIEW_LIMIT = 160
 
 def req_kwargs(ctx: RunContext, extra: dict | None = None) -> dict:
     """Default request kwargs for target: verify=False, fixed timeout."""
-    kw: dict = {"verify": False, "timeout": ctx.timeout_sec or DEFAULT_TIMEOUT}
+    timeout = ctx.timeout_sec or DEFAULT_TIMEOUT
+    left = ctx.seconds_left()
+    if left is not None:
+        timeout = max(0.1, min(timeout, left))
+    kw: dict = {"verify": False, "timeout": timeout}
     if extra:
         kw.update(extra)
     return kw
@@ -62,6 +67,7 @@ def request_with_retries(
     attempts = max(1, ctx.retries + 1)
     last_error: RequestException | None = None
     for attempt in range(attempts):
+        ctx.ensure_runtime()
         try:
             response = ctx.session.request(method, url, **req_kwargs(ctx, dict(extra)))
             ctx.after_request()
@@ -71,6 +77,14 @@ def request_with_retries(
             if attempt == attempts - 1:
                 raise
             ctx.after_request()
+            backoff = min(2.0, 0.25 * (2**attempt))
+            left = ctx.seconds_left()
+            if left is not None:
+                if left <= 0:
+                    raise TimeoutError("Global deadline exceeded") from exc
+                backoff = min(backoff, left)
+            if backoff > 0:
+                time.sleep(backoff)
     assert last_error is not None
     raise last_error
 

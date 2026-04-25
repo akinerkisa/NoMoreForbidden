@@ -475,3 +475,24 @@ def test_request_with_retries_retries_once():
     response = request_with_retries(ctx, "GET", "https://example.com")
     assert response.status_code == 200
     assert ctx.session.calls == 2
+
+
+def test_request_with_retries_respects_deadline():
+    class SlowFailSession:
+        def request(self, method, url, **kwargs):
+            raise RequestException("boom")
+
+    ctx = RunContext(
+        session=SlowFailSession(),
+        verbose=False,
+        output_format="text",
+        ip="127.0.0.1",
+        retries=2,
+        deadline_sec=0.01,
+    )
+    ctx._started_at -= 1.0
+    try:
+        request_with_retries(ctx, "GET", "https://example.com")
+        assert False
+    except TimeoutError:
+        assert True

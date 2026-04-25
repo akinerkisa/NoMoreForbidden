@@ -25,6 +25,7 @@ class RunContext:
     rate_limit: float = 0.0
     timeout_sec: float = 5.0
     retries: int = 0
+    deadline_sec: float = 0.0
     fp_bytes: int = 64
     fp_threshold: int = 40
     fp_baseline: FpBaselineMode = "auto"
@@ -41,6 +42,7 @@ class RunContext:
     schema_version: str = "1.0"
     _lock: Lock = field(default_factory=Lock, init=False, repr=False)
     _last_request_at: float = field(default=0.0, init=False, repr=False)
+    _started_at: float = field(default_factory=time.monotonic, init=False, repr=False)
 
     @property
     def structured(self) -> bool:
@@ -69,6 +71,20 @@ class RunContext:
                 time.sleep(wait_time - elapsed)
                 now = time.monotonic()
             self._last_request_at = now
+
+    def deadline_exceeded(self) -> bool:
+        if self.deadline_sec <= 0:
+            return False
+        return (time.monotonic() - self._started_at) >= self.deadline_sec
+
+    def seconds_left(self) -> float | None:
+        if self.deadline_sec <= 0:
+            return None
+        return max(0.0, self.deadline_sec - (time.monotonic() - self._started_at))
+
+    def ensure_runtime(self) -> None:
+        if self.deadline_exceeded():
+            raise TimeoutError("Global deadline exceeded")
 
 
 def build_session(

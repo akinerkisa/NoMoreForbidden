@@ -7,6 +7,7 @@ import csv
 import json
 import sys
 from pathlib import Path
+from typing import Any
 
 from nomoreforbidden import BANNER, __version__
 from nomoreforbidden.context import RunContext, build_session
@@ -41,6 +42,42 @@ def parse_csv_list(value: str | None) -> list[str]:
     if not value:
         return []
     return [item.strip() for item in value.split(",") if item.strip()]
+
+
+def _mask_value(value: object) -> object:
+    if value is None:
+        return None
+    text = str(value)
+    if not text:
+        return value
+    if len(text) <= 4:
+        return "*" * len(text)
+    return f"{text[:2]}***{text[-2:]}"
+
+
+def _redact_payload(data: Any) -> Any:
+    if isinstance(data, dict):
+        out: dict[str, Any] = {}
+        for key, value in data.items():
+            lowered = key.lower()
+            if any(
+                token in lowered
+                for token in ("ip", "cookie", "header", "authorization", "proxy")
+            ):
+                out[key] = _mask_value(value)
+            else:
+                out[key] = _redact_payload(value)
+        return out
+    if isinstance(data, list):
+        return [_redact_payload(item) for item in data]
+    return data
+
+
+def _emit_output(text: str, output_file: str | None) -> None:
+    sys.stdout.write(text)
+    if output_file:
+        with Path(output_file).open("a", encoding="utf-8") as handle:
+            handle.write(text)
 
 
 def resolve_profile(profile: str, aggressive: bool) -> dict[str, object]:
@@ -117,6 +154,39 @@ def resolve_enabled_probes(
         parser.error(f"Unknown probe name(s): {', '.join(sorted(unknown))}")
     enabled = set(all_probes) if not only else set(only)
     return enabled - skip
+
+
+def validate_runtime_args(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
+    if args.delay < 0:
+        parser.error("--delay 0 veya daha buyuk olmali.")
+    if args.fp_bytes < 1:
+        parser.error("--fp-bytes en az 1 olmali.")
+    if args.fp_threshold < 0:
+        parser.error("--fp-threshold negatif olamaz.")
+    if args.concurrency < 1:
+        parser.error("--concurrency en az 1 olmali.")
+    if args.rate_limit < 0:
+        parser.error("--rate-limit negatif olamaz.")
+    if args.timeout <= 0:
+        parser.error("--timeout 0'dan buyuk olmali.")
+    if args.retries < 0:
+        parser.error("--retries negatif olamaz.")
+    if args.max_requests < 0:
+        parser.error("--max-requests negatif olamaz.")
+    if args.deadline < 0:
+        parser.error("--deadline negatif olamaz.")
+
+
+def apply_safe_mode(args: argparse.Namespace) -> None:
+    if not args.safe_mode:
+        return
+    args.require_scope = True
+    if args.concurrency > 2:
+        args.concurrency = 2
+    if args.rate_limit <= 0 or args.rate_limit > 2.0:
+        args.rate_limit = 2.0
+    if not args.force_run:
+        args.dry_run = True
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -301,6 +371,44 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="N",
         help="Tahmini toplam HTTP üst sınırı N'den büyükse taramayı başlatma ve çık (2). 0=kapalı.",
     )
+    p.add_argument(
+        "--safe-mode",
+        action="store_true",
+        help="Daha guvenli varsayilanlar uygular; force-run verilmezse dry-run moduna gecer.",
+    )
+    p.add_argument(
+        "--force-run",
+        action="store_true",
+        help="safe-mode ile birlikte gercek HTTP taramasina izin verir.",
+    )
+    p.add_argument(
+        "--require-scope",
+        action="store_true",
+        help="Calisma oncesi --allow-host veya --allow-url-prefix zorunlu olsun.",
+    )
+    p.add_argument(
+        "--allow-private",
+        action="store_true",
+        help="Private/loopback/local hedefleri bilerek taramaya izin ver.",
+    )
+    p.add_argument(
+        "--deadline",
+        type=float,
+        default=0.0,
+        metavar="SEC",
+        help="Toplam tarama suresi ust siniri (0=kapali). Asilirsa surec durur.",
+    )
+    p.add_argument(
+        "--output-file",
+        metavar="PATH",
+        default=None,
+        help="Ciktilari stdout'a ek olarak dosyaya da yaz.",
+    )
+    p.add_argument(
+        "--redact",
+        action="store_true",
+        help="Structured ciktilarda hassas alanlari maskele.",
+    )
     return p
 
 
@@ -360,8 +468,16 @@ def run_cli() -> None:
 def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
+    if args.output_file:
+        Path(args.output_file).write_text("", encoding="utf-8")
+    apply_safe_mode(args)
+    validate_runtime_args(args, parser)
     scope_err = validate_target_scope(
-        args.url, list(args.allow_host), list(args.allow_url_prefix)
+        args.url,
+        list(args.allow_host),
+        list(args.allow_url_prefix),
+        require_scope=args.require_scope,
+        allow_private=args.allow_private,
     )
     if scope_err:
         parser.error(scope_err)
@@ -390,12 +506,13 @@ def main() -> int:
         verbose=args.verbose,
         output_format=output_format,
         ip=args.ip,
-        delay_sec=max(0.0, args.delay),
-        rate_limit=max(0.0, args.rate_limit),
-        timeout_sec=max(0.1, args.timeout),
-        retries=max(0, args.retries),
-        fp_bytes=max(1, args.fp_bytes),
-        fp_threshold=max(0, args.fp_threshold),
+        delay_sec=args.delay,
+        rate_limit=args.rate_limit,
+        timeout_sec=args.timeout,
+        retries=args.retries,
+        deadline_sec=args.deadline,
+        fp_bytes=args.fp_bytes,
+        fp_threshold=args.fp_threshold,
         fp_baseline=args.fp_baseline,
         enable_http2=args.http2 or bool(profile_settings["http2"]),
         extra_payloads=extra_payloads,
@@ -414,26 +531,27 @@ def main() -> int:
         if output_format == "json":
             out = {
                 "dry_run": True,
+                "safe_mode": args.safe_mode,
                 "target": args.url,
                 "allow_host": list(args.allow_host),
                 "allow_url_prefix": list(args.allow_url_prefix),
                 "estimated_http_upper_bound": est,
             }
-            json.dump(out, sys.stdout, indent=2)
-            sys.stdout.write("\n")
+            payload: Any = _redact_payload(out) if args.redact else out
+            _emit_output(f"{json.dumps(payload, indent=2)}\n", args.output_file)
         else:
-            print("NoMoreForbidden — dry-run (HTTP gönderilmedi)")
-            print(f"Hedef: {args.url}")
+            lines = ["NoMoreForbidden - dry-run (HTTP gonderilmedi)", f"Hedef: {args.url}"]
             if args.allow_host:
-                print(f"İzin verilen host: {', '.join(args.allow_host)}")
+                lines.append(f"Izin verilen host: {', '.join(args.allow_host)}")
             if args.allow_url_prefix:
-                print(f"İzin verilen önek: {', '.join(args.allow_url_prefix)}")
-            print("Tahmini HTTP istek üst sınırı (session + düşük seviye http_version):")
+                lines.append(f"Izin verilen onek: {', '.join(args.allow_url_prefix)}")
+            lines.append("Tahmini HTTP istek ust siniri (session + dusuk seviye http_version):")
             for k, v in est.items():
                 if k == "total_upper_bound":
                     continue
-                print(f"  {k}: {v}")
-            print(f"  TOPLAM (üst sınır): {total_est}")
+                lines.append(f"  {k}: {v}")
+            lines.append(f"  TOPLAM (ust sinir): {total_est}")
+            _emit_output("\n".join(lines) + "\n", args.output_file)
         return 0
 
     max_req = max(0, int(args.max_requests))
@@ -446,18 +564,25 @@ def main() -> int:
         return 2
 
     if not ctx.structured:
-        print(BANNER)
+        _emit_output(f"{BANNER}\n", args.output_file)
 
-    if "nmf" in ctx.enabled_probes:
-        nmf(args.url, ctx)
-    if "wayback" in ctx.enabled_probes:
-        wayback(args.url, ctx)
-    if "ssl_switch" in ctx.enabled_probes:
-        ssl_switch(args.url, ctx)
-    if "http_version" in ctx.enabled_probes:
-        run_http_version_checks(args.url, args.verbose, ctx)
-    if "get_ip" in ctx.enabled_probes:
-        get_ip(args.url, ctx)
+    try:
+        if "nmf" in ctx.enabled_probes:
+            nmf(args.url, ctx)
+        if "wayback" in ctx.enabled_probes:
+            wayback(args.url, ctx)
+        if "ssl_switch" in ctx.enabled_probes:
+            ssl_switch(args.url, ctx)
+        if "http_version" in ctx.enabled_probes:
+            run_http_version_checks(args.url, args.verbose, ctx)
+        if "get_ip" in ctx.enabled_probes:
+            get_ip(args.url, ctx)
+    except TimeoutError as exc:
+        if ctx.structured:
+            ctx.record(category="error", phase="runtime", error=str(exc))
+        else:
+            _emit_output(f"Zaman siniri asildi: {exc}\n", args.output_file)
+        return 2
     summary = build_summary(ctx.findings, ctx.has_hit)
 
     if output_format == "json":
@@ -473,16 +598,32 @@ def main() -> int:
             "retries": ctx.retries,
             "fp_threshold": ctx.fp_threshold,
             "fp_baseline": ctx.fp_baseline,
+            "deadline": ctx.deadline_sec,
             "summary": summary,
             "findings": ctx.findings,
             "hit": ctx.has_hit,
         }
-        json.dump(out, sys.stdout, indent=2)
-        sys.stdout.write("\n")
+        payload = _redact_payload(out) if args.redact else out
+        _emit_output(f"{json.dumps(payload, indent=2)}\n", args.output_file)
     elif output_format == "csv":
-        _write_csv(ctx.findings)
+        findings_payload = _redact_payload(ctx.findings) if args.redact else ctx.findings
+        keys = (
+            sorted(set().union(*(f.keys() for f in findings_payload)))
+            if findings_payload
+            else ["category"]
+        )
+        if findings_payload:
+            from io import StringIO
+
+            buffer = StringIO()
+            writer = csv.DictWriter(buffer, fieldnames=keys, extrasaction="ignore")
+            writer.writeheader()
+            writer.writerows(findings_payload)
+            _emit_output(buffer.getvalue(), args.output_file)
+        else:
+            _emit_output("category\n", args.output_file)
     else:
-        print(render_text_summary(summary))
+        _emit_output(f"{render_text_summary(summary)}\n", args.output_file)
 
     return 0 if ctx.has_hit else 1
 

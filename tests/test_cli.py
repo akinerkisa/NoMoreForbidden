@@ -3,6 +3,7 @@
 import pytest
 
 from nomoreforbidden.cli import (
+    apply_safe_mode,
     build_parser,
     build_summary,
     load_list_file,
@@ -11,6 +12,7 @@ from nomoreforbidden.cli import (
     render_text_summary,
     resolve_enabled_probes,
     resolve_profile,
+    validate_runtime_args,
 )
 
 
@@ -123,6 +125,42 @@ def test_timeout_and_retries_flags():
     assert a.retries == 2
 
 
+def test_deadline_output_file_and_redact_flags(tmp_path):
+    p = build_parser()
+    out = tmp_path / "result.json"
+    a = p.parse_args(
+        [
+            "-u",
+            "https://x",
+            "--deadline",
+            "12.5",
+            "--output-file",
+            str(out),
+            "--redact",
+        ]
+    )
+    assert a.deadline == 12.5
+    assert a.output_file == str(out)
+    assert a.redact is True
+
+
+def test_safe_mode_applies_defaults():
+    p = build_parser()
+    a = p.parse_args(["-u", "https://x", "--safe-mode", "--concurrency", "10"])
+    apply_safe_mode(a)
+    assert a.require_scope is True
+    assert a.dry_run is True
+    assert a.concurrency == 2
+    assert a.rate_limit == 2.0
+
+
+def test_safe_mode_force_run_keeps_live_scan():
+    p = build_parser()
+    a = p.parse_args(["-u", "https://x", "--safe-mode", "--force-run"])
+    apply_safe_mode(a)
+    assert a.dry_run is False
+
+
 def test_profile_and_aggressive_flags():
     p = build_parser()
     a = p.parse_args(["-u", "https://x", "--profile", "safe", "--aggressive"])
@@ -190,3 +228,25 @@ def test_render_text_summary():
     assert "possible_fp=1" in line
     assert "errors=1" in line
     assert "hit=true" in line
+
+
+@pytest.mark.parametrize(
+    "argv",
+    [
+        ["-u", "http://x", "--delay", "-1"],
+        ["-u", "http://x", "--fp-bytes", "0"],
+        ["-u", "http://x", "--fp-threshold", "-1"],
+        ["-u", "http://x", "--concurrency", "0"],
+        ["-u", "http://x", "--rate-limit", "-1"],
+        ["-u", "http://x", "--timeout", "0"],
+        ["-u", "http://x", "--retries", "-1"],
+        ["-u", "http://x", "--max-requests", "-1"],
+        ["-u", "http://x", "--deadline", "-1"],
+    ],
+)
+def test_validate_runtime_args_rejects_invalid_values(argv):
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    with pytest.raises(SystemExit) as exc:
+        validate_runtime_args(args, parser)
+    assert exc.value.code == 2

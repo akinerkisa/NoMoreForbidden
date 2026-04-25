@@ -23,7 +23,6 @@ from nomoreforbidden.request_utils import (
     session_request,
 )
 
-# Varsayılan URL sonekleri: encoding, çift encoding, path normalizasyonu, JVM (;)
 _DEFAULT_URL_PAYLOADS: tuple[str, ...] = (
     "/",
     "/*",
@@ -283,8 +282,6 @@ def nmf(url: str, ctx: RunContext) -> None:
                     error=str(e),
                 )
 
-    # CDN-style: request site root with rewrite headers. Some apps only honor
-    # X-Original-URL / X-Rewrite-URL on the protected route — also probe the target URL.
     cache_header_targets = build_cache_header_targets(base, url)
 
     full_url = urldefrag(url)[0]

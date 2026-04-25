@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ipaddress
 from urllib.parse import urlparse
 
 
@@ -20,11 +21,25 @@ def validate_target_scope(
     url: str,
     allowed_hosts: list[str],
     allowed_url_prefixes: list[str],
+    require_scope: bool = False,
+    allow_private: bool = False,
 ) -> str | None:
     """Uygunsa None; değilse Türkçe hata mesajı."""
     parsed = urlparse(url)
     if parsed.scheme not in ("http", "https"):
         return "Yalnızca http veya https URL'leri desteklenir."
+
+    host = normalize_host(parsed.hostname)
+    if not host:
+        return "URL'de hostname yok; geçerli bir hedef verin."
+
+    if not allow_private and is_private_or_local_host(host):
+        return (
+            "Hedef private/local gorunuyor. Bilincli calismak icin --allow-private kullanin."
+        )
+
+    if require_scope and not allowed_hosts and not allowed_url_prefixes:
+        return "--require-scope etkinken --allow-host veya --allow-url-prefix zorunludur."
 
     if not allowed_hosts and not allowed_url_prefixes:
         return None
@@ -38,9 +53,6 @@ def validate_target_scope(
             )
 
     if allowed_hosts:
-        host = normalize_host(parsed.hostname)
-        if not host:
-            return "URL'de hostname yok; --allow-host ile eşleştirilemez."
         allowed_norm = {normalize_host(h) for h in allowed_hosts if h.strip()}
         allowed_norm.discard(None)
         if host not in allowed_norm:
@@ -50,3 +62,21 @@ def validate_target_scope(
             )
 
     return None
+
+
+def is_private_or_local_host(host: str) -> bool:
+    value = host.strip().lower()
+    if value in {"localhost", "localhost.localdomain"}:
+        return True
+    try:
+        ip = ipaddress.ip_address(value)
+    except ValueError:
+        return value.endswith(".local")
+    return (
+        ip.is_private
+        or ip.is_loopback
+        or ip.is_link_local
+        or ip.is_reserved
+        or ip.is_multicast
+        or ip.is_unspecified
+    )
