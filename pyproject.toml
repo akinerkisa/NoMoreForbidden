@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nomoreforbidden"
+dynamic = ["version"]
+description = "CLI tool for 403 bypass techniques."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "requests>=2.28.0",
+  "urllib3>=2.0.0",
+  "httpx",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.0.0",
+  "ruff>=0.12.0",
+  'tomli>=2.0.1; python_version < "3.11"',
+]
+
+[project.scripts]
+nmf = "nomoreforbidden.cli:run_cli"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["nomoreforbidden*"]
+
+[tool.setuptools.dynamic]
+version = {attr = "nomoreforbidden._version.VERSION"}
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+markers = [
+  "integration: renikApp ile yerel HTTP entegrasyonu (Flask gerekir)",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+extend-exclude = ["renikApp"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]

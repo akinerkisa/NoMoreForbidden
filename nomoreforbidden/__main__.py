@@ -1,4 +1,4 @@
-"""Backward-compatible entry: run as ``python nmf.py``."""
+"""Entry point for python -m nomoreforbidden."""
 
 import sys
 
