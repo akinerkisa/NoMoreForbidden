@@ -1,3 +1,6 @@
+import urllib3
+
+urllib3.disable_warnings()
 
 from nomoreforbidden._version import VERSION
 
