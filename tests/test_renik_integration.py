@@ -18,8 +18,8 @@ RENIK = os.environ.get("RENIKAPP_URL", "http://127.0.0.1:5000").rstrip("/")
 
 def _renik_reachable() -> bool:
     try:
-        urllib.request.urlopen(f"{RENIK}/", timeout=2)
-        return True
+        with urllib.request.urlopen(f"{RENIK}/healthz", timeout=2) as response:
+            return response.status == 200
     except (urllib.error.URLError, OSError, TimeoutError):
         return False
 
@@ -90,6 +90,8 @@ def test_renik_403_real_bypass_paths(path: str) -> None:
     assert proc.returncode == 0, proc.stderr + proc.stdout
     data = json.loads(proc.stdout)
     assert data.get("hit") is True
+    assert int(data.get("request_count", 0)) > 0
+    assert float(data.get("elapsed_sec", -1)) >= 0
 
 
 def test_renik_fake_200_flags_possible_fp() -> None:
@@ -115,5 +117,8 @@ def test_renik_fake_200_flags_possible_fp() -> None:
     assert proc.returncode == 0, proc.stderr + proc.stdout
     data = json.loads(proc.stdout)
     assert data.get("hit") is True
+    assert int(data.get("request_count", 0)) > 0
+    assert float(data.get("elapsed_sec", -1)) >= 0
     summary = data.get("summary") or {}
     assert int(summary.get("possible_false_positives", 0)) >= 1
+    assert int(summary.get("request_count", 0)) == int(data["request_count"])

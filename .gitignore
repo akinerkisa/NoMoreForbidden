@@ -1,7 +1,56 @@
+# Python caches and local environments
 __pycache__/
 *.py[cod]
 *.egg-info/
 .pytest_cache/
 .ruff_cache/
+.coverage
+htmlcov/
+.coverage.*
+coverage.xml
+.venv/
+venv/
+ENV/
+
+# Build and distribution output
+build/
+dist/
+*.whl
+*.tar.gz
+
+# Local configuration and runtime data
+.env
+.env.*
+.envrc
 users.db
+*.db
+*.db-shm
+*.db-wal
+*.log
+*.err
+*.out
+*.pid
+
+# Credentials, private keys, and local certificates
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.kdbx
+*credentials*
+*credential*
+*secrets*
+*secret*
+*token*
+
+# The training lab is maintained as a separate checkout. Keep it out of the
+# parent package index while allowing its own Git history and tests to run.
 renikApp/
+
+# Editor and operating-system files
+.idea/
+.vscode/
+.cursor/
+.DS_Store
+Thumbs.db

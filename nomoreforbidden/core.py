@@ -1,6 +1,4 @@
 
-import urllib3
-
 from nomoreforbidden import BANNER
 from nomoreforbidden.probes import get_ip, nmf, ssl_switch, wayback
 from nomoreforbidden.request_utils import (
@@ -12,8 +10,6 @@ from nomoreforbidden.request_utils import (
 from nomoreforbidden.request_utils import (
     req_kwargs as _req_kwargs,
 )
-
-urllib3.disable_warnings()
 
 __all__ = [
     "BANNER",

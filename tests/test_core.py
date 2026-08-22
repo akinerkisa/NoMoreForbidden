@@ -406,6 +406,7 @@ def test_after_request_sets_last_request_at():
     assert ctx._last_request_at == 0.0
     ctx.after_request()
     assert ctx._last_request_at > 0.0
+    assert ctx.request_count == 1
 
 
 def test_response_metadata_extracts_headers():

@@ -422,7 +422,13 @@ def _write_csv(findings: list[dict]) -> None:
     w.writerows(findings)
 
 
-def build_summary(findings: list[dict], hit: bool) -> dict[str, object]:
+def build_summary(
+    findings: list[dict],
+    hit: bool,
+    *,
+    request_count: int | None = None,
+    elapsed_sec: float | None = None,
+) -> dict[str, object]:
     by_category: dict[str, int] = {}
     status_hits = 0
     possible_false_positives = 0
@@ -438,7 +444,7 @@ def build_summary(findings: list[dict], hit: bool) -> dict[str, object]:
         if "error" in row:
             errors += 1
 
-    return {
+    summary: dict[str, object] = {
         "total_findings": len(findings),
         "by_category": by_category,
         "status_hits": status_hits,
@@ -446,10 +452,15 @@ def build_summary(findings: list[dict], hit: bool) -> dict[str, object]:
         "errors": errors,
         "hit": hit,
     }
+    if request_count is not None:
+        summary["request_count"] = request_count
+    if elapsed_sec is not None:
+        summary["elapsed_sec"] = round(max(0.0, elapsed_sec), 3)
+    return summary
 
 
 def render_text_summary(summary: dict[str, object]) -> str:
-    return (
+    line = (
         "Scan Summary: "
         f"findings={summary['total_findings']} "
         f"status_hits={summary['status_hits']} "
@@ -457,6 +468,11 @@ def render_text_summary(summary: dict[str, object]) -> str:
         f"errors={summary['errors']} "
         f"hit={str(summary['hit']).lower()}"
     )
+    if "request_count" in summary:
+        line += f" requests={summary['request_count']}"
+    if "elapsed_sec" in summary:
+        line += f" elapsed_sec={summary['elapsed_sec']}"
+    return line
 
 
 def run_cli() -> None:
@@ -584,7 +600,12 @@ def main() -> int:
         else:
             _emit_output(f"Deadline exceeded: {exc}\n", args.output_file)
         return 2
-    summary = build_summary(ctx.findings, ctx.has_hit)
+    summary = build_summary(
+        ctx.findings,
+        ctx.has_hit,
+        request_count=ctx.request_count,
+        elapsed_sec=ctx.elapsed_sec,
+    )
 
     if output_format == "json":
         out = {
@@ -600,6 +621,8 @@ def main() -> int:
             "fp_threshold": ctx.fp_threshold,
             "fp_baseline": ctx.fp_baseline,
             "deadline": ctx.deadline_sec,
+            "request_count": ctx.request_count,
+            "elapsed_sec": round(ctx.elapsed_sec, 3),
             "summary": summary,
             "findings": ctx.findings,
             "hit": ctx.has_hit,

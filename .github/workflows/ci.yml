@@ -6,12 +6,15 @@ on:
   pull_request:
     branches: [main, master]
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
@@ -23,10 +26,19 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -e ".[dev]"
+          pip install build
+      - name: Fetch local training lab
+        run: |
+          git clone --depth 1 https://github.com/akinerkisa/renikApp.git renikApp
+          test -f renikApp/run_dev.py
+          test -f renikApp/tests/test_403_scenarios.py
+          pip install -r renikApp/requirements.txt
       - name: Run lint
         run: python -m ruff check .
       - name: Run tests
         run: python -m pytest tests/ -q
+      - name: Build package
+        run: python -m build
       - name: Smoke CLI
         run: |
           nmf --version

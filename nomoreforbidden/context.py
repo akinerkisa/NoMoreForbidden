@@ -36,6 +36,7 @@ class RunContext:
     concurrency: int = 1
     findings: list[dict[str, Any]] = field(default_factory=list)
     has_hit: bool = False
+    request_count: int = 0
     schema_version: str = "1.0"
     _lock: Lock = field(default_factory=Lock, init=False, repr=False)
     _last_request_at: float = field(default=0.0, init=False, repr=False)
@@ -56,6 +57,7 @@ class RunContext:
 
     def after_request(self) -> None:
         with self._lock:
+            self.request_count += 1
             now = time.monotonic()
             min_interval = 0.0
             if self.rate_limit > 0:
@@ -66,6 +68,10 @@ class RunContext:
                 time.sleep(wait_time - elapsed)
                 now = time.monotonic()
             self._last_request_at = now
+
+    @property
+    def elapsed_sec(self) -> float:
+        return max(0.0, time.monotonic() - self._started_at)
 
     def deadline_exceeded(self) -> bool:
         if self.deadline_sec <= 0:

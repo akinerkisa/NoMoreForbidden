@@ -1,0 +1,24 @@
+name: Feature request
+description: Propose a safe, reproducible improvement.
+title: "feature: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem and use case
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+    validations:
+      required: true
+  - type: textarea
+    id: safety
+    attributes:
+      label: Safety and test plan
+      description: Explain scope controls, local coverage, and output compatibility.
+    validations:
+      required: true

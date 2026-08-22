@@ -3,7 +3,10 @@ try:
     import tomllib
 except ModuleNotFoundError:  # Python < 3.11
     import tomli as tomllib  # type: ignore[no-redef]
+import warnings
 from pathlib import Path
+
+import urllib3
 
 from nomoreforbidden import __version__
 from nomoreforbidden._version import VERSION
@@ -34,3 +37,16 @@ def test_importlib_metadata_matches_when_installed():
     if dist_ver != VERSION:
         return
     assert dist_ver == VERSION
+
+
+def test_tls_warning_suppression_is_limited_to_insecure_requests():
+    with warnings.catch_warnings():
+        warnings.resetwarnings()
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        ignored_categories = {
+            category
+            for action, _message, category, _module, _lineno in warnings.filters
+            if action == "ignore"
+        }
+        assert urllib3.exceptions.InsecureRequestWarning in ignored_categories
+        assert urllib3.exceptions.HTTPWarning not in ignored_categories

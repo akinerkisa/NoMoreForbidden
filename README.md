@@ -1,6 +1,70 @@
 # NoMoreForbidden
 
-NoMoreForbidden is a tool that tries various techniques to bypass forbidden(403) pages on websites and presents their results to the user.
+[![CI](https://github.com/akinerkisa/NoMoreForbidden/actions/workflows/ci.yml/badge.svg)](https://github.com/akinerkisa/NoMoreForbidden/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
+
+NoMoreForbidden is an authorized HTTP access-control regression and security
+testing CLI for investigating 401/403 responses. It compares a blocked
+baseline with bounded request variations, scores likely false positives, and
+emits structured evidence for local labs, CI checks, and approved assessments.
+
+It is not an authorization bypass service and must only be used against
+systems you own or are explicitly authorized to test.
+
+## Why use it
+
+- Baseline-driven comparison instead of treating every `200` as a bypass.
+- False-positive signals for deny pages, redirects, JSON errors, and content
+  similarity.
+- Safety controls: `--dry-run`, `--require-scope`, `--allow-host`,
+  `--allow-url-prefix`, `--max-requests`, rate limiting, deadlines, and
+  private-target opt-in.
+- Text, JSON, and CSV output for humans and automation.
+- Structured scans include request count and elapsed time so traffic and
+  performance claims are auditable.
+- HTTP/1.x, optional HTTP/2, header, path, method-override, and proxy-aware
+  probes.
+- A reproducible local training lab through [renikApp](https://github.com/akinerkisa/renikApp).
+
+## Quick start
+
+```bash
+python -m pip install -e ".[dev]"
+nmf -u https://example.com/protected \
+  --require-scope --allow-host example.com --safe-mode --dry-run \
+  --output-format json
+```
+
+For a real request, remove `--dry-run` only after confirming authorization and
+the estimated request count. For a fully local exercise, start renikApp and
+use `--allow-private` with a loopback URL.
+
+## Local lab and regression tests
+
+The current renikApp checkout is kept as a separate local repository under
+`renikApp/` and is intentionally ignored by the parent package's Git index.
+Run the lab with `python renikApp/run_dev.py`, then run the integration suite:
+
+```bash
+python -m pytest tests/test_renik_integration.py -q
+```
+
+The lab scenarios cover real header/method variations and deliberately
+misleading `200`/redirect/JSON responses so false-positive handling can be
+measured without contacting external systems.
+
+## Project health and contribution
+
+- [Security policy](SECURITY.md)
+- [Contributing guide](CONTRIBUTING.md)
+- [Support](SUPPORT.md)
+- [Local benchmark contract](benchmarks/README.md)
+- [Two-repository release checklist](docs/release-checklist.md)
+- [Changelog and releases](https://github.com/akinerkisa/NoMoreForbidden/releases)
+
+New probes should include a deterministic local scenario, a baseline and
+expected-result test, documentation, and a clear explanation of safety impact.
 
 **Use only on systems you are authorized to test.** Prefer **`--dry-run`** to review the estimated request count, **`--allow-host`** / **`--allow-url-prefix`** to limit scope, and **`--max-requests`** / **`--rate-limit`** / **`--delay`** to cap traffic.
 
@@ -15,6 +79,11 @@ NoMoreForbidden is a tool that tries various techniques to bypass forbidden(403)
 <code>git clone https://github.com/akinerkisa/NoMoreForbidden</code>
 <p><code>cd NoMoreForbidden</code></p>
 <p><code>pip install -r requirements.txt</code></p>
+
+For an isolated command-line installation, use a virtual environment or
+`pipx` after the package is published:
+
+<code>pipx install nomoreforbidden</code>
 
 To install the package (adds the <code>nmf</code> command on your PATH):
 
